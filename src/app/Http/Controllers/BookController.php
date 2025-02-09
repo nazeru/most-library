@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Book;
+use App\Models\BookCopy;
 use Illuminate\Http\Request;
 use OpenApi\Annotations as OA;
 
@@ -18,8 +19,16 @@ class BookController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
+        $user = $request->user();
+
+        if ($user->isReader()) {
+            return Book::whereHas('copies', function ($query) {
+                $query->where('status', 'available');
+            })->get();
+        }
+
         return Book::all();
     }
 
@@ -43,6 +52,12 @@ class BookController extends Controller
     
     public function store(Request $request)
     {
+        $user = $request->user();
+
+        if (!$user->isLibrarian()) {
+            return response()->json(['message' => 'Доступ запрещен'], 403);
+        }
+
         $request->validate([
             'title' => 'required|string|max:255',
             'isbn' => 'nullable|regex:/^\d{9}[\dX]$/|unique:books',

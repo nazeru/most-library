@@ -26,4 +26,9 @@ class BookCopy extends Model
     {
         return $this->belongsTo(Book::class);
     }
+
+    public function scopeAvailable($query)
+    {
+        return $query->where('status', 'available');
+    }
 }

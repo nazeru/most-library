@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Author;
+use App\Models\Publisher;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -13,6 +14,6 @@ class PublisherSeeder extends Seeder
      */
     public function run(): void
     {
-        Author::factory()->count(5)->create();
+        Publisher::factory()->count(5)->create();
     }
 }
