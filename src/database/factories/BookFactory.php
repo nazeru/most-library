@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
+use App\Models\Publisher;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Book>
@@ -21,6 +22,7 @@ class BookFactory extends Factory
             'published' => fake()->date(),
             'isbn' => $this->generateIsbn10(),
             'isbn13' => $this->generateIsbn13(),
+            'publisher_id' => fake()->optional(0.8)->randomElement(Publisher::pluck('id')->toArray()),
         ];
     }
 

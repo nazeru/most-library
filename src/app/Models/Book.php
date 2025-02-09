@@ -15,8 +15,19 @@ class Book extends Model
         'title', 
         'published', 
         'isbn', 
-        'isbn13'
+        'isbn13',
+        'publisher_id',
     ];
+
+    public function authors()
+    {
+        return $this->belongsToMany(Author::class);
+    }
+
+    public function publisher()
+    {
+        return $this->belongsTo(Publisher::class);
+    }
 
     public function copies()
     {
