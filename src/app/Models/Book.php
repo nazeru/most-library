@@ -17,4 +17,9 @@ class Book extends Model
         'isbn', 
         'isbn13'
     ];
+
+    public function copies()
+    {
+        return $this->hasMany(BookCopy::class);
+    }
 }
