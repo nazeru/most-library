@@ -1,0 +1,18 @@
+openapi: 3.0.0
+info:
+  title: 'Library API Documentation'
+  version: 1.0.0
+paths:
+  /books:
+    post:
+      tags:
+        - book
+      summary: 'Add a new book to the library.'
+      operationId: store
+      responses:
+        405:
+          description: 'Invalid input'
+tags:
+  -
+    name: book
+    description: book
