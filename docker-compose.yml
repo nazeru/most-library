@@ -33,6 +33,17 @@ services:
       - mysql-data:/var/lib/mysql
     ports:
       - "3306:3306"
+      
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      MYSQL_ROOT_PASSWORD: secret
+    ports:
+      - "8080:80"
+    depends_on:
+      - mysql
 
   composer:
     image: composer:latest
