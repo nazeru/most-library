@@ -4,7 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\BookController;
-
+use App\Http\Controllers\BookCopyController;
 use App\Http\Controllers\JWTAuthController;
 use App\Http\Middleware\JwtMiddleware;
 
@@ -28,6 +28,8 @@ Route::prefix('v1')->group(function () {
             Route::post('books', [BookController::class, 'store']);
             Route::put('books', [BookController::class, 'update']);
             Route::delete('books', [BookController::class, 'destroy']);
+
+            Route::apiResource('books/copies', BookCopyController::class);
         });
 
     });

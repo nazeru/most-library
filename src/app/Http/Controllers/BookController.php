@@ -69,9 +69,20 @@ class BookController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Request $request, string $id)
     {
-        return Book::findOrFail($id);
+        $user = $request->user();
+        $book = Book::findOrFail($id);
+
+        if (!$user->isLibrarian()) {
+            $availableCopies = $book->copies()->where('status', 'available')->exists();
+
+            if (!$availableCopies) {
+                return response()->json(['error' => 'This book is not available'], 403);
+            }
+        }
+
+        return $book;
     }
 
     /**
