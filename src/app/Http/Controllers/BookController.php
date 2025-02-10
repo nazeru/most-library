@@ -23,13 +23,13 @@ class BookController extends Controller
     {
         $user = $request->user();
 
-        if ($user->isReader()) {
-            return Book::whereHas('copies', function ($query) {
-                $query->where('status', 'available');
-            })->get();
+        if ($user->isLibrarian()) {
+            return Book::all();
         }
 
-        return Book::all();
+        return Book::whereHas('copies', function ($query) {
+            $query->where('status', 'available');
+        })->get();
     }
 
     /**
@@ -52,11 +52,6 @@ class BookController extends Controller
     
     public function store(Request $request)
     {
-        $user = $request->user();
-
-        if (!$user->isLibrarian()) {
-            return response()->json(['message' => 'Доступ запрещен'], 403);
-        }
 
         $request->validate([
             'title' => 'required|string|max:255',

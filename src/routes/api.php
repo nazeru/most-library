@@ -13,15 +13,23 @@ Route::prefix('v1')->group(function () {
     Route::post('register', [JWTAuthController::class, 'register']);
     Route::post('login', [JWTAuthController::class, 'login']);
 
-    Route::middleware([JwtMiddleware::class])->group(function () {
-
+    Route::middleware('auth:api')->group(function () {
         Route::post('logout', [JWTAuthController::class, 'logout']);
+        Route::post('refresh', [JWTAuthController::class, 'refresh']);
 
-        Route::apiResource('books', BookController::class)->only(['index', 'show']);
-
-        Route::middleware('librarian')->group(function () {
-            Route::apiResource('books', BookController::class)->except(['index', 'show']);
+        Route::get('books', [BookController::class, 'index']);
+        
+        Route::middleware('role:reader')->group(function () {
+            Route::post('books', [BookController::class, 'get']);
+            Route::post('books', [BookController::class, 'return']);
         });
+
+        Route::middleware('role:librarian')->group(function () {
+            Route::post('books', [BookController::class, 'store']);
+            Route::put('books', [BookController::class, 'update']);
+            Route::delete('books', [BookController::class, 'destroy']);
+        });
+
     });
 });
 

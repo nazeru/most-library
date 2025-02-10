@@ -2,17 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\UserRole;
-use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
+use App\Models\User;
 use Illuminate\Support\Facades\Validator;
-use Tymon\JWTAuth\Facades\JWTAuth;
-use Tymon\JWTAuth\Exceptions\JWTException;
 
 class JWTAuthController extends Controller
 {
-    // User registration
+    /**
+     * Register a new user.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -21,62 +23,68 @@ class JWTAuthController extends Controller
             'password' => 'required|string|min:6',
         ]);
 
-        if($validator->fails()){
-            return response()->json($validator->errors()->toJson(), 400);
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
         }
 
         $user = User::create([
-            'name' => $request->get('name'),
-            'email' => $request->get('email'),
-            'password' => Hash::make($request->get('password')),
-            'role' => UserRole::READER,
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => bcrypt($request->password),
         ]);
 
-        $token = JWTAuth::fromUser($user);
+        $token = Auth::login($user);
 
-        return response()->json(compact('user','token'), 201);
+        return response()->json([
+            'access_token' => $token,
+            'token_type' => 'bearer',
+            'expires_in' => Auth::factory()->getTTL() * 60
+        ], 201);
     }
 
-    // User login
+    /**
+     * Login user and return a token.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
     public function login(Request $request)
     {
         $credentials = $request->only('email', 'password');
 
-        try {
-            if (! $token = JWTAuth::attempt($credentials)) {
-                return response()->json(['error' => 'Invalid credentials'], 401);
-            }
-
-            // Get the authenticated user.
-            $user = auth()->user();
-
-            // (optional) Attach the role to the token.
-            $token = JWTAuth::claims(['role' => $user->role])->fromUser($user);
-
-            return response()->json(compact('token'));
-        } catch (JWTException $e) {
-            return response()->json(['error' => 'Could not create token'], 500);
+        if (!$token = Auth::attempt($credentials)) {
+            return response()->json(['error' => 'Unauthorized'], 401);
         }
+
+        return response()->json([
+            'access_token' => $token,
+            'token_type' => 'bearer',
+            'expires_in' => Auth::factory()->getTTL() * 60
+        ]);
     }
 
-    // Get authenticated user
-    public function getUser()
+    public function refresh()
     {
         try {
-            if (! $user = JWTAuth::parseToken()->authenticate()) {
-                return response()->json(['error' => 'User not found'], 404);
-            }
-        } catch (JWTException $e) {
-            return response()->json(['error' => 'Invalid token'], 400);
+            $newToken = Auth::refresh();
+            return response()->json([
+                'access_token' => $newToken,
+                'token_type' => 'bearer',
+                'expires_in' => Auth::factory()->getTTL() * 60
+            ]);
+        } catch (\Tymon\JWTAuth\Exceptions\TokenInvalidException $e) {
+            return response()->json(['error' => 'Invalid token'], 401);
         }
-
-        return response()->json(compact('user'));
     }
 
-    // User logout
+    /**
+     * Logout user.
+     *
+     * @return \Illuminate\Http\Response
+     */
     public function logout()
     {
-        JWTAuth::invalidate(JWTAuth::getToken());
+        Auth::logout(true);
 
         return response()->json(['message' => 'Successfully logged out']);
     }
