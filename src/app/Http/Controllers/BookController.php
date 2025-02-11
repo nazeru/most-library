@@ -53,10 +53,6 @@ class BookController extends Controller
      */
     public function store(Request $request)
     {
-        $user = $request->user();
-        if (!$user->isLibrarian()) {
-            return response()->json(['error' => 'Forbidden'], 403);
-        }
 
         $request->validate([
             'title' => 'required|string|max:255',
@@ -67,6 +63,12 @@ class BookController extends Controller
 
         if (empty($request->isbn) && empty($request->isbn13)) {
             return response()->json(['error' => 'Either ISBN-10 or ISBN-13 is required.'], 422);
+        }
+
+        if ($request->filled('isbn') && empty($request->isbn13)) {
+            $request->merge(['isbn13' => $this->convertIsbn10ToIsbn13($request->isbn)]);
+        } elseif ($request->filled('isbn13') && empty($request->isbn)) {
+            $request->merge(['isbn' => $this->convertIsbn13ToIsbn10($request->isbn13)]);
         }
 
         $book = Book::create($request->all());
@@ -102,10 +104,6 @@ class BookController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $user = $request->user();
-        if (!$user->isLibrarian()) {
-            return response()->json(['error' => 'Forbidden'], 403);
-        }
 
         $book = Book::find($id);
         if (!$book) {
@@ -122,10 +120,6 @@ class BookController extends Controller
      */
     public function destroy(Request $request, string $id)
     {
-        $user = $request->user();
-        if (!$user->isLibrarian()) {
-            return response()->json(['error' => 'Forbidden'], 403);
-        }
 
         $book = Book::find($id);
         if (!$book) {
@@ -135,5 +129,48 @@ class BookController extends Controller
         $book->delete();
 
         return response()->json(['message' => 'Book deleted successfully'], 200);
+    }
+
+    private function convertIsbn10ToIsbn13($isbn10)
+    {
+        $isbn = '978' . substr($isbn10, 0, 9);
+        $checkDigit = $this->calculateIsbn13CheckDigit($isbn);
+        return $isbn . $checkDigit;
+    }
+
+    private function convertIsbn13ToIsbn10($isbn13)
+    {
+        if (substr($isbn13, 0, 3) !== '978') {
+            return null;
+        }
+
+        $isbn = substr($isbn13, 3, 9);
+        $checkDigit = $this->calculateIsbn10CheckDigit($isbn);
+        return $isbn . $checkDigit;
+    }
+
+    private function calculateIsbn13CheckDigit($isbn)
+    {
+        $sum = 0;
+        for ($i = 0; $i < 12; $i++) {
+            $sum += ($i % 2 === 0) ? (int) $isbn[$i] : (int) $isbn[$i] * 3;
+        }
+        $remainder = $sum % 10;
+        return ($remainder === 0) ? 0 : 10 - $remainder;
+    }
+
+    private function calculateIsbn10CheckDigit($isbn)
+    {
+        $sum = 0;
+        for ($i = 0; $i < 9; $i++) {
+            $sum += ((int) $isbn[$i]) * (10 - $i);
+        }
+        $remainder = 11 - ($sum % 11);
+        if ($remainder === 10) {
+            return 'X';
+        } elseif ($remainder === 11) {
+            return '0';
+        }
+        return (string) $remainder;
     }
 }
