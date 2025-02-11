@@ -23,7 +23,7 @@
 ### 📥 1. Клонирование репозитория
 
 ```bash
-git clone https://github.com/your-repo/library-api.git
+git clone https://github.com/nazeru/most-library.git
 cd library-api
 ```
 
