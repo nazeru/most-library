@@ -29,6 +29,6 @@ class BookCopy extends Model
 
     public function scopeAvailable($query)
     {
-        return $query->where('status', 'available');
+        return $query->where('status', BookCopyStatus::AVAILABLE);
     }
 }

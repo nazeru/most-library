@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Book;
 use App\Models\BookCopy;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use OpenApi\Annotations as OA;
 
 /**
@@ -13,7 +14,6 @@ use OpenApi\Annotations as OA;
  *     version="1.0.0",
  * )
  */
-
 class BookController extends Controller
 {
     /**
@@ -24,17 +24,15 @@ class BookController extends Controller
         $user = $request->user();
 
         if ($user->isLibrarian()) {
-            return Book::all();
+            return response()->json(Book::all(), 200);
         }
 
-        return Book::whereHas('copies', function ($query) {
+        $books = Book::whereHas('copies', function ($query) {
             $query->where('status', 'available');
         })->get();
-    }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+        return response()->json($books, 200);
+    }
 
     /**
      * Add a new book to the library.
@@ -44,26 +42,36 @@ class BookController extends Controller
      *     tags={"book"},
      *     operationId="store",
      *     @OA\Response(
-     *         response=405,
-     *         description="Invalid input"
+     *         response=201,
+     *         description="Book created successfully"
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Forbidden"
      *     ),
      * )
      */
-    
     public function store(Request $request)
     {
+        $user = $request->user();
+        if (!$user->isLibrarian()) {
+            return response()->json(['error' => 'Forbidden'], 403);
+        }
 
         $request->validate([
             'title' => 'required|string|max:255',
             'isbn' => 'nullable|regex:/^\d{9}[\dX]$/|unique:books',
             'isbn13' => 'nullable|regex:/^\d{13}$/|unique:books',
             'published' => 'nullable|date',
-        ], [
-            'isbn.required_without' => 'Укажите либо ISBN-10, либо ISBN-13.',
-            'isbn13.required_without' => 'Укажите либо ISBN-10, либо ISBN-13.',
         ]);
 
-        return Book::create($request->all());
+        if (empty($request->isbn) && empty($request->isbn13)) {
+            return response()->json(['error' => 'Either ISBN-10 or ISBN-13 is required.'], 422);
+        }
+
+        $book = Book::create($request->all());
+
+        return response()->json($book, 201);
     }
 
     /**
@@ -72,7 +80,11 @@ class BookController extends Controller
     public function show(Request $request, string $id)
     {
         $user = $request->user();
-        $book = Book::findOrFail($id);
+        $book = Book::find($id);
+
+        if (!$book) {
+            return response()->json(['error' => 'Book not found'], 404);
+        }
 
         if (!$user->isLibrarian()) {
             $availableCopies = $book->copies()->where('status', 'available')->exists();
@@ -82,7 +94,7 @@ class BookController extends Controller
             }
         }
 
-        return $book;
+        return response()->json($book, 200);
     }
 
     /**
@@ -90,20 +102,38 @@ class BookController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $book = Book::findOrFail($id);
+        $user = $request->user();
+        if (!$user->isLibrarian()) {
+            return response()->json(['error' => 'Forbidden'], 403);
+        }
+
+        $book = Book::find($id);
+        if (!$book) {
+            return response()->json(['error' => 'Book not found'], 404);
+        }
+
         $book->update($request->all());
 
-        return $book;
+        return response()->json($book, 200);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Request $request, string $id)
     {
-        $book = Book::findOrFail($id);
+        $user = $request->user();
+        if (!$user->isLibrarian()) {
+            return response()->json(['error' => 'Forbidden'], 403);
+        }
+
+        $book = Book::find($id);
+        if (!$book) {
+            return response()->json(['error' => 'Book not found'], 404);
+        }
+
         $book->delete();
 
-        return response()->json(['message' => 'Book deleted successfully']);
+        return response()->json(['message' => 'Book deleted successfully'], 200);
     }
 }
