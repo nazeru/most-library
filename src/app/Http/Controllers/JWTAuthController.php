@@ -33,12 +33,13 @@ class JWTAuthController extends Controller
             'password' => bcrypt($request->password),
         ]);
 
-        $token = Auth::login($user);
+        //$token = Auth::login($user);
 
         return response()->json([
-            'access_token' => $token,
-            'token_type' => 'bearer',
-            'expires_in' => Auth::factory()->getTTL() * 60
+            'success' => 'Registration successful'
+            // 'access_token' => $token,
+            // 'token_type' => 'bearer',
+            // 'expires_in' => Auth::factory()->getTTL() * 60
         ], 201);
     }
 

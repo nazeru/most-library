@@ -99,7 +99,23 @@ class BookCopyControllerTest extends TestCase
 
         $response->assertStatus(200)
                  ->assertJsonStructure([
-                     '*' => ['id', 'barcode', 'status', 'book_id']
+                     'data' => [
+                         '*' => [
+                             'id',
+                             'barcode',
+                             'status',
+                             'book' => [
+                                 'id',
+                                 'title',
+                                 'isbn',
+                                 'isbn13',
+                                 'published',
+                                 'author',
+                                 'publisher',
+                                 'available_copies',
+                             ],
+                         ],
+                     ],
                  ]);
     }
 
@@ -113,6 +129,22 @@ class BookCopyControllerTest extends TestCase
         $response = $this->getJson("/api/v1/books/copies/{$bookCopy->id}", $headers);
 
         $response->assertStatus(200)
-                 ->assertJsonStructure(['id', 'barcode', 'status', 'book_id']);
+             ->assertJson([
+                 'data' => [
+                     'id' => $bookCopy->id,
+                     'barcode' => $bookCopy->barcode,
+                     'status' => $bookCopy->status->value,
+                     'book' => [
+                         'id' => $book->id,
+                         'title' => $book->title,
+                         'isbn' => $book->isbn,
+                         'isbn13' => $book->isbn13,
+                         'published' => $book->published ?? 'Unknown',
+                         'author' => $book->author->name ?? 'Unknown',
+                         'publisher' => $book->publisher->name ?? 'Unknown',
+                         'available_copies' => $book->available_copies,
+                     ],
+                 ],
+             ]);
     }
 }
