@@ -24,8 +24,10 @@
 
 ```bash
 git clone https://github.com/nazeru/most-library.git
-cd library-api
+cd most-library
 ```
+
+Создайте файл .env на основе .env.example и настройте его:
 
 ```bash
 cp .env.example .env
@@ -61,8 +63,7 @@ docker-compose run --rm artisan jwt:secret
 docker-compose run --rm artisan migrate --seed
 ```
 
-📋 Создание библиотекаря
-Выполнение команды для создания библиотекаря:
+Создание библиотекаря
 
 ```bash
 docker-compose run --rm artisan librarian:create
@@ -78,27 +79,4 @@ docker-compose run --rm artisan librarian:create
 
 ```bash
 docker-compose run --rm artisan test
-```
-
-🗑️ Полезные команды
-Перезапуск контейнеров:
-
-```bash
-docker-compose down
-docker-compose up -d
-```
-
-Очистка кэша:
-
-```bash
-docker-compose run --rm artisan cache:clear
-docker-compose run --rm artisan config:clear
-docker-compose run --rm artisan route:clear
-docker-compose run --rm artisan view:clear
-```
-
-Повторная миграция базы данных:
-
-```bash
-docker-compose run --rm artisan migrate:fresh --seed
 ```
