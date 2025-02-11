@@ -27,6 +27,11 @@ class BookCopy extends Model
         return $this->belongsTo(Book::class);
     }
 
+    public function rentals()
+    {
+        return $this->hasMany(BookRental::class);
+    }
+
     public function scopeAvailable($query)
     {
         return $query->where('status', BookCopyStatus::AVAILABLE);

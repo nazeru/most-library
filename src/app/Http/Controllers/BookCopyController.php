@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\BookCopyStatus;
+use App\Http\Resources\BookCopyResource;
 use App\Models\BookCopy;
 use Illuminate\Http\Request;
 
@@ -11,10 +12,10 @@ class BookCopyController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index($bookId)
+    public function index()
     {
-        $bookCopies = BookCopy::where('book_id', $bookId)->get();
-        return response()->json($bookCopies);
+        $bookCopies = BookCopy::with('book')->get();
+        return BookCopyResource::collection($bookCopies);
     }
 
     /**
@@ -24,13 +25,13 @@ class BookCopyController extends Controller
     {
         $request->validate([
             'barcode' => 'required|string|unique:books_copies,barcode',
-            'status' => 'required|in:' . implode(',', BookCopyStatus::values()),
+            'status' => 'nullable|in:' . implode(',', BookCopyStatus::values()),
         ]);
 
         $bookCopy = BookCopy::create([
             'book_id' => $bookId,
             'barcode' => $request->barcode,
-            'status' => $request->status,
+            'status' => $request->status ?? BookCopyStatus::AVAILABLE,
         ]);
 
         return response()->json($bookCopy, 201);
@@ -39,23 +40,33 @@ class BookCopyController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show($bookId, $copyId)
+    public function show(string $id)
     {
-        $bookCopy = BookCopy::where('book_id', $bookId)->findOrFail($copyId);
-        return response()->json($bookCopy);
+        $bookCopy = BookCopy::with('book')->find($id);
+
+        if (!$bookCopy) {
+            return response()->json(['error' => 'Book copy not found'], 404);
+        }
+
+        return new BookCopyResource($bookCopy);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, $bookId, $copyId)
+    public function update(Request $request, $copyId)
     {
         $request->validate([
             'barcode' => 'sometimes|string|unique:books_copies,barcode,' . $copyId,
             'status' => 'sometimes|in:' . implode(',', BookCopyStatus::values()),
         ]);
 
-        $bookCopy = BookCopy::where('book_id', $bookId)->findOrFail($copyId);
+        $bookCopy = BookCopy::find($copyId);
+
+        if (!$bookCopy) {
+            return response()->json(['error' => 'Book copy not found'], 403);
+        }
+
         $bookCopy->update($request->only(['barcode', 'status']));
 
         return response()->json($bookCopy);
@@ -64,9 +75,14 @@ class BookCopyController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy($bookId, $copyId)
+    public function destroy($copyId)
     {
-        $bookCopy = BookCopy::where('book_id', $bookId)->findOrFail($copyId);
+        $bookCopy = BookCopy::find($copyId);
+
+        if (!$bookCopy) {
+            return response()->json(['error' => 'Book copy not found'], 403);
+        }
+        
         $bookCopy->delete();
     
         return response()->json(['message' => 'Book copy deleted successfully']);

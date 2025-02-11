@@ -36,6 +36,11 @@ class User extends Authenticatable implements JWTSubject
         'remember_token',
     ];
 
+    public function rentals()
+    {
+        return $this->hasMany(BookRental::class);
+    }
+
     /**
      * Get the attributes that should be cast.
      *
@@ -68,5 +73,9 @@ class User extends Authenticatable implements JWTSubject
     public function isReader(): bool
     {
         return $this->role === UserRole::READER;
+    }
+
+    public function hasRole(string $role): bool {
+        return $this->role->value === $role;
     }
 }
