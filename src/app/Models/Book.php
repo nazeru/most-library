@@ -33,4 +33,5 @@ class Book extends Model
     {
         return $this->hasMany(BookCopy::class);
     }
+    
 }

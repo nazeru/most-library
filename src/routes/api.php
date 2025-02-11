@@ -33,14 +33,10 @@ Route::prefix('v1')->group(function () {
             Route::delete('books/{id}', [BookController::class, 'destroy']);
 
             Route::get('books/copies', [BookCopyController::class, 'index']);
-            Route::get('books/copies/{}', [BookCopyController::class, 'show']);
-
-            Route::get('books/{book}/copies', [BookCopyController::class, 'index']);
-            Route::get('books/{book}/copies/{copy}', [BookCopyController::class, 'show']);
-
-            Route::post('books/{book}/copies', [BookCopyController::class, 'store']);
-            Route::put('books/{book}/copies/{copy}', [BookCopyController::class, 'update']);
-            Route::delete('books/{book}/copies/{copy}', [BookCopyController::class, 'destroy']);
+            Route::get('books/copies/{id}', [BookCopyController::class, 'show']);
+            Route::post('books/{id}', [BookCopyController::class, 'store']);
+            Route::put('books/copies/{id}', [BookCopyController::class, 'update']);
+            Route::delete('books/copies/{id}', [BookCopyController::class, 'destroy']);
 
             Route::get('rentals', [BookRentalController::class, 'getAllRentals']);
         });

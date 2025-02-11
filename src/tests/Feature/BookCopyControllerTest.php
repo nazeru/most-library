@@ -17,10 +17,8 @@ class BookCopyControllerTest extends TestCase
 {
     use RefreshDatabase;
 
-    // Метод для создания библиотекаря и генерации токена
     protected function authenticateLibrarian()
     {
-        // Создание библиотекаря (имитация консольной команды)
         $librarian = User::create([
             'name' => 'Test Librarian',
             'email' => 'librarian_' . uniqid() . '@example.com',
@@ -28,7 +26,6 @@ class BookCopyControllerTest extends TestCase
             'role' => UserRole::LIBRARIAN,
         ]);
 
-        // Генерация JWT-токена для библиотекаря
         $token = JWTAuth::fromUser($librarian);
 
         return [
@@ -42,13 +39,18 @@ class BookCopyControllerTest extends TestCase
         $headers = $this->authenticateLibrarian();
         $book = Book::factory()->create();
 
-        $response = $this->postJson("/api/v1/books/{$book->id}/copies", [
+        $response = $this->postJson("/api/v1/books/{$book->id}", [
             'barcode' => '123456789',
             'status' => BookCopyStatus::AVAILABLE,
         ], $headers);
 
         $response->assertStatus(201)
                  ->assertJson(['barcode' => '123456789']);
+
+        $this->assertDatabaseHas('books_copies', [
+            'barcode' => '123456789',
+            'book_id' => $book->id,
+        ]);
     }
 
     #[Test]
@@ -58,12 +60,17 @@ class BookCopyControllerTest extends TestCase
         $book = Book::factory()->create();
         $bookCopy = BookCopy::factory()->create(['book_id' => $book->id]);
 
-        $response = $this->putJson("/api/v1/books/{$book->id}/copies/{$bookCopy->id}", [
+        $response = $this->putJson("/api/v1/books/copies/{$bookCopy->id}", [
             'status' => BookCopyStatus::RENTED,
         ], $headers);
 
         $response->assertStatus(200)
                  ->assertJson(['status' => BookCopyStatus::RENTED->value]);
+
+        $this->assertDatabaseHas('books_copies', [
+            'id' => $bookCopy->id,
+            'status' => BookCopyStatus::RENTED->value,
+        ]);
     }
 
     #[Test]
@@ -73,11 +80,39 @@ class BookCopyControllerTest extends TestCase
         $book = Book::factory()->create();
         $bookCopy = BookCopy::factory()->create(['book_id' => $book->id]);
 
-        $response = $this->deleteJson("/api/v1/books/{$book->id}/copies/{$bookCopy->id}", [], $headers);
+        $response = $this->deleteJson("/api/v1/books/copies/{$bookCopy->id}", [], $headers);
 
         $response->assertStatus(200)
                  ->assertJson(['message' => 'Book copy deleted successfully']);
 
         $this->assertDatabaseMissing('books_copies', ['id' => $bookCopy->id]);
+    }
+
+    #[Test]
+    public function librarian_can_view_all_books_copies()
+    {
+        $headers = $this->authenticateLibrarian();
+        $book = Book::factory()->create();
+        BookCopy::factory(3)->create(['book_id' => $book->id]);
+
+        $response = $this->getJson("/api/v1/books/copies", $headers);
+
+        $response->assertStatus(200)
+                 ->assertJsonStructure([
+                     '*' => ['id', 'barcode', 'status', 'book_id']
+                 ]);
+    }
+
+    #[Test]
+    public function librarian_can_view_a_single_book_copy()
+    {
+        $headers = $this->authenticateLibrarian();
+        $book = Book::factory()->create();
+        $bookCopy = BookCopy::factory()->create(['book_id' => $book->id]);
+
+        $response = $this->getJson("/api/v1/books/copies/{$bookCopy->id}", $headers);
+
+        $response->assertStatus(200)
+                 ->assertJsonStructure(['id', 'barcode', 'status', 'book_id']);
     }
 }
