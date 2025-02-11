@@ -57,41 +57,45 @@ class BookRentalController extends Controller
     public function returnBooks(Request $request)
     {
         $request->validate([
-            'book_copy_ids' => 'required',
-            'book_copy_ids' => 'min:1',
+            'book_copy_ids' => 'required|min:1',
             'book_copy_ids.*' => 'exists:books_copies,id',
         ]);
-
+    
         $user = $request->user();
-
         $bookCopyIds = is_array($request->book_copy_ids)
             ? $request->book_copy_ids
             : [$request->book_copy_ids];
-
+    
         foreach ($bookCopyIds as $bookCopyId) {
-            $rental = BookRental::where('user_id', $user->id)
-                ->where('book_copy_id', $bookCopyId)
-                ->where('status', BookRentalStatus::ACTIVE)
+            $rental = BookRental::where('book_copy_id', $bookCopyId)
+                ->where(function ($query) {
+                    $query->where('status', BookRentalStatus::ACTIVE)
+                        ->orWhere('status', BookRentalStatus::OVERDUE);
+                })
                 ->first();
-
+    
             if (!$rental) {
                 return response()->json(['error' => 'No available rented book'], 404);
             }
-
+    
             DB::transaction(function () use ($rental, $bookCopyId) {
-
+                $returnStatus = now()->gt($rental->due_date) 
+                    ? BookRentalStatus::RETURNED_WITH_OVERDUE 
+                    : BookRentalStatus::RETURNED;
+    
                 $rental->update([
                     'return_date' => now(),
-                    'status' => BookRentalStatus::RETURNED,
+                    'status' => $returnStatus,
                 ]);
-
+    
                 $bookCopy = BookCopy::findOrFail($bookCopyId);
                 $bookCopy->update(['status' => BookCopyStatus::AVAILABLE]);
             });
         }
-
+    
         return response()->json(['message' => 'Books returned successfully']);
     }
+    
 
     public function getAllRentals()
     {
@@ -106,6 +110,7 @@ class BookRentalController extends Controller
         $rentedBooks = BookRental::with('bookCopy.book')
             ->where('user_id', $user->id)
             ->where('status', BookRentalStatus::ACTIVE)
+            ->orWhere('status', BookRentalStatus::OVERDUE)
             ->get();
 
         return response()->json($rentedBooks);
