@@ -2,10 +2,11 @@
 
 namespace App\Enums;
 
-enum UserRole: string
+enum BookRentalStatus: string
 {
-    case READER = 'reader'; 
-    case LIBRARIAN = 'librarian';
+    case ACTIVE = 'active';
+    case RETURNED = 'returned';
+    case OVERDUE = 'overdue';
 
     public static function values(): array
     {

@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\BookCopyController;
+use App\Http\Controllers\BookRentalController;
 use App\Http\Controllers\JWTAuthController;
 use App\Http\Middleware\UserRoleMiddleware;
 
@@ -19,11 +20,11 @@ Route::prefix('v1')->group(function () {
         Route::post('refresh', [JWTAuthController::class, 'refresh']);
 
         Route::get('books', [BookController::class, 'index']);
-        Route::get('books/{id}', [BookController::class, 'show']);
         
-        Route::middleware('role:reader')->group(function () {
-            Route::post('books/get', [BookController::class, 'get']);
-            Route::post('books/return', [BookController::class, 'return']);
+        Route::middleware(UserRoleMiddleware::class.':reader')->group(function () {
+            Route::post('books/rent', [BookRentalController::class, 'rentBooks']);  
+            Route::post('books/return', [BookRentalController::class, 'returnBooks']);
+            Route::get('books/rented', [BookRentalController::class, 'getRented']);
         });
 
         Route::middleware(UserRoleMiddleware::class.':librarian')->group(function () {
@@ -31,8 +32,8 @@ Route::prefix('v1')->group(function () {
             Route::put('books/{id}', [BookController::class, 'update']);
             Route::delete('books/{id}', [BookController::class, 'destroy']);
 
-            Route::apiResource('books/copies', BookCopyController::class)
-                ->except(['index', 'show']);
+            Route::get('books/copies', [BookCopyController::class, 'index']);
+            Route::get('books/copies/{}', [BookCopyController::class, 'show']);
 
             Route::get('books/{book}/copies', [BookCopyController::class, 'index']);
             Route::get('books/{book}/copies/{copy}', [BookCopyController::class, 'show']);
@@ -40,8 +41,11 @@ Route::prefix('v1')->group(function () {
             Route::post('books/{book}/copies', [BookCopyController::class, 'store']);
             Route::put('books/{book}/copies/{copy}', [BookCopyController::class, 'update']);
             Route::delete('books/{book}/copies/{copy}', [BookCopyController::class, 'destroy']);
+
+            Route::get('rentals', [BookRentalController::class, 'getAllRentals']);
         });
 
+        Route::get('books/{id}', [BookController::class, 'show']);
     });
 });
 

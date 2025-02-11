@@ -11,10 +11,9 @@ class BookCopyController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index($bookId)
+    public function index()
     {
-        $bookCopies = BookCopy::where('book_id', $bookId)->get();
-        return response()->json($bookCopies);
+        return response()->json(BookCopy::all(), 200);
     }
 
     /**
