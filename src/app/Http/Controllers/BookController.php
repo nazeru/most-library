@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\BookResource;
 use App\Models\Book;
 use App\Models\BookCopy;
 use Illuminate\Http\Request;
@@ -24,14 +25,14 @@ class BookController extends Controller
         $user = $request->user();
 
         if ($user->isLibrarian()) {
-            return response()->json(Book::all(), 200);
+            return BookResource::collection(Book::all());
         }
 
         $books = Book::whereHas('copies', function ($query) {
             $query->where('status', 'available');
         })->get();
 
-        return response()->json($books, 200);
+        return BookResource::collection($books);
     }
 
     /**
@@ -96,7 +97,7 @@ class BookController extends Controller
             }
         }
 
-        return response()->json($book, 200);
+        return new BookResource($book);
     }
 
     /**

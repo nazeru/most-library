@@ -47,7 +47,7 @@ class BookControllerTest extends TestCase
         $response = $this->getJson('/api/v1/books');
 
         $response->assertStatus(200)
-                 ->assertJsonCount(2)
+                 ->assertJsonCount(2, 'data')
                  ->assertJsonFragment(['title' => $book1->title])
                  ->assertJsonFragment(['title' => $book2->title]);
     }

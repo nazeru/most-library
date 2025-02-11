@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\BookCopyStatus;
+use App\Http\Resources\BookCopyResource;
 use App\Models\BookCopy;
 use Illuminate\Http\Request;
 
@@ -13,7 +14,8 @@ class BookCopyController extends Controller
      */
     public function index()
     {
-        return response()->json(BookCopy::all(), 200);
+        $bookCopies = BookCopy::with('book')->get();
+        return BookCopyResource::collection($bookCopies);
     }
 
     /**
@@ -40,13 +42,13 @@ class BookCopyController extends Controller
      */
     public function show(string $id)
     {
-        $bookCopy = BookCopy::find($id);
+        $bookCopy = BookCopy::with('book')->find($id);
 
         if (!$bookCopy) {
             return response()->json(['error' => 'Book copy not found'], 404);
         }
 
-        return response()->json($bookCopy, 200);
+        return new BookCopyResource($bookCopy);
     }
 
     /**
