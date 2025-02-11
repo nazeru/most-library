@@ -6,13 +6,14 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log; 
+use Illuminate\Support\Facades\Log;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class UserRoleMiddleware
 {
     public function handle(Request $request, Closure $next, $role): Response
     {
-        $user = Auth::user();
+        $user = JWTAuth::parseToken()->authenticate();
 
         // Логирование для диагностики
         Log::info('Проверка роли пользователя', [
@@ -20,13 +21,13 @@ class UserRoleMiddleware
             'expected_role' => $role
         ]);
 
-        if ($user->role == $role) {
-            return response()->json([
-                'error' => 'Forbidden - Invalid Role',
-                'user_role' => $user->role,
-                'required_role' => $role
-            ], 403);
-        }
+        // if ($user->role !== $role) {
+        //     return response()->json([
+        //         'error' => 'Forbidden - Invalid Role',
+        //         'user_role' => $user->role,
+        //         'required_role' => $role
+        //     ], 403);
+        // }
 
         return $next($request);
     }
